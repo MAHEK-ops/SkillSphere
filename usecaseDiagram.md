@@ -1,4 +1,4 @@
-# Use Case Diagram — ChronoLens
+# Use Case Diagram - ChronoLens
 
 ```mermaid
 graph TD
@@ -80,7 +80,7 @@ graph TD
 
 | Actor | Description |
 |---|---|
-| **User** | Any person who interacts with the app — enters a location, explores the timeline, bookmarks places, reads story mode |
+| **User** | Any person who interacts with the app - enters a location, explores the timeline, bookmarks places, reads story mode |
 | **Admin** | System administrator who monitors external API health, cache hit rates, and rate limit usage |
 
 ---
@@ -89,10 +89,10 @@ graph TD
 
 | Use Case | Description |
 |---|---|
-| Enter Address | User types a city, landmark, or address — system geocodes it to lat/lng via Nominatim |
-| Enter GPS Coordinates | User provides lat/lng directly — skips geocoding step |
+| Enter Address | User types a city, landmark, or address - system geocodes it to lat/lng via Nominatim |
+| Enter GPS Coordinates | User provides lat/lng directly - skips geocoding step |
 | Use Current Location | Browser Geolocation API provides coordinates automatically |
-| View Historical Timeline | Core use case — backend fetches, aggregates, cleans, scores, and returns sorted events |
+| View Historical Timeline | Core use case - backend fetches, aggregates, cleans, scores, and returns sorted events |
 | Filter by Category | Narrow results to War, Science, Culture, Disaster, Politics, or Births/Deaths |
 | Filter by Time Period | Restrict to Ancient / Medieval / Colonial / Modern or a custom year range |
 | Search by Keyword | Full-text search across event titles and descriptions |
@@ -101,4 +101,4 @@ graph TD
 | Bookmark Location | Save a location to personal history for later retrieval |
 | Compare Two Locations | Side-by-side historical event count and category breakdown of two places |
 | View Trend Analysis | Visual breakdown of which event categories dominate this location |
-| View Events on Map | React Leaflet map with clustered pins — click a pin to see event details |
+| View Events on Map | React Leaflet map with clustered pins - click a pin to see event details |
