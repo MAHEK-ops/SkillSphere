@@ -1,6 +1,6 @@
-# Class Diagram — ChronoLens
+# Class Diagram - ChronoLens
 
-> Note: Backend is Node.js. JavaScript classes are used throughout. All classes follow OOP principles — encapsulation, abstraction, inheritance, and polymorphism.
+> Note: Backend is Node.js. JavaScript classes are used throughout. All classes follow OOP principles - encapsulation, abstraction, inheritance, and polymorphism.
 
 ```mermaid
 classDiagram

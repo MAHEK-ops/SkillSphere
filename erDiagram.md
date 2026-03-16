@@ -1,4 +1,4 @@
-# ER Diagram — ChronoLens
+# ER Diagram - ChronoLens
 
 ```mermaid
 erDiagram
@@ -102,20 +102,20 @@ erDiagram
 
 | Table | Purpose |
 |---|---|
-| `LOCATION` | Every unique location that has been searched. `coordinate_key` (e.g. `18.52_73.85`) is used as a natural cache key. The `coordinates` column is a PostGIS `GEOMETRY(Point, 4326)` — enables radius search and distance sorting in SQL. |
+| `LOCATION` | Every unique location that has been searched. `coordinate_key` (e.g. `18.52_73.85`) is used as a natural cache key. The `coordinates` column is a PostGIS `GEOMETRY(Point, 4326)` - enables radius search and distance sorting in SQL. |
 | `HISTORICAL_EVENT` | One row per deduplicated, structured historical event. Stores the final output after extraction, categorization, and scoring. Also has a PostGIS `coordinates` column for viewport queries. |
 | `EVENT_SOURCE` | Master list of data sources (Wikipedia, Wikidata, GeoNames) with reliability weights. Weights are used by `ScoringService` to calculate confidence scores. |
 | `EVENT_SOURCE_LINK` | Junction table linking each event to one or more sources. An event linked to 3 sources scores higher than one linked to 1. This table directly powers the confidence scoring system. |
-| `TIMELINE_CACHE` | Persisted cache for generated timelines. Checked before any external API calls. Has TTL via `expires_at` — expired rows are ignored and regenerated. |
-| `APP_USER` | Application user — required for bookmark and search history features. |
+| `TIMELINE_CACHE` | Persisted cache for generated timelines. Checked before any external API calls. Has TTL via `expires_at` - expired rows are ignored and regenerated. |
+| `APP_USER` | Application user - required for bookmark and search history features. |
 | `BOOKMARK` | Users save named bookmarks for locations they want to revisit. |
-| `SEARCH_LOG` | Audit log of all searches — used for trend analysis, API usage monitoring, and detecting repeated coordinates. |
+| `SEARCH_LOG` | Audit log of all searches - used for trend analysis, API usage monitoring, and detecting repeated coordinates. |
 
 ---
 
 ## PostGIS Columns Explained
 
-The `coordinates` column in `LOCATION` and `HISTORICAL_EVENT` is not a regular number — it is a PostGIS spatial type:
+The `coordinates` column in `LOCATION` and `HISTORICAL_EVENT` is not a regular number - it is a PostGIS spatial type:
 
 ```sql
 -- in Prisma schema (raw SQL migration)
