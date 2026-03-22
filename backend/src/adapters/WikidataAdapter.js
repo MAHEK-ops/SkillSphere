@@ -6,7 +6,7 @@ class WikidataAdapter {
   /**
    * Safely interpolates "1857-05-10T00:00:00Z" strings accurately parsing cleanly resolving back Integers.
    */
-  static parseDateToYear(isoDate) {
+  parseDateToYear(isoDate) {
     if (!isoDate) return null;
     const d = new Date(isoDate);
     if (!isNaN(d.getTime())) return d.getUTCFullYear();
@@ -19,12 +19,12 @@ class WikidataAdapter {
   /**
    * Cleans ugly SPARQL identifier payloads parsing out mapping "(Q12345)" artifacts sequentially.
    */
-  static cleanLabel(label) {
+  cleanLabel(label) {
     if (!label) return 'Untitled Event';
     return label.replace(/\s*\(Q\d+\)$/i, '').trim() || 'Untitled Event';
   }
 
-  static adapt(rawEvent) {
+  adapt(rawEvent) {
     try {
       let rawTitle = this.cleanLabel(rawEvent.rawTitle);
       const cleanTitle = rawTitle.length > 200 ? rawTitle.substring(0, 197) + '...' : rawTitle;

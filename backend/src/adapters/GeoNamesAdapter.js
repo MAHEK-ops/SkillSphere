@@ -4,11 +4,11 @@ const Category = require('../constants/Category');
 const Era = require('../constants/Era');
 
 class GeoNamesAdapter {
-  static parseYear(text) {
+  parseYear(text) {
     return extractYear(text);
   }
 
-  static adapt(rawEvent) {
+  adapt(rawEvent) {
     try {
       const rawTitle = rawEvent.rawTitle || 'Untitled Event';
       const cleanTitle = rawTitle.length > 200 ? rawTitle.substring(0, 197) + '...' : rawTitle;

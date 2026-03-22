@@ -4,11 +4,11 @@ const Category = require('../constants/Category');
 const Era = require('../constants/Era');
 
 class WikipediaAdapter {
-  static parseYear(text) {
+  parseYear(text) {
     return extractYear(text);
   }
 
-  static cleanDescription(text) {
+  cleanDescription(text) {
     if (!text) return null;
     // Strip possible standard HTML artifacts mapping strictly to 500 capacity
     let clean = text.replace(/<[^>]+>/g, '').trim();
@@ -18,7 +18,7 @@ class WikipediaAdapter {
     return clean;
   }
 
-  static adapt(rawEvent) {
+  adapt(rawEvent) {
     try {
       const rawTitle = rawEvent.rawTitle || 'Untitled Event';
       const cleanTitle = rawTitle.length > 200 ? rawTitle.substring(0, 197) + '...' : rawTitle;
