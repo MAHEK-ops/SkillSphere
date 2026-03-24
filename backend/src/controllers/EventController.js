@@ -1,5 +1,6 @@
 const EventRepository = require('../repositories/EventRepository');
 const LocationRepository = require('../repositories/LocationRepository');
+const CompareService = require('../services/CompareService');
 
 // ─── EventController ────────────────────────────────────────────
 // Handles filtered event queries and map viewport spatial lookups.
@@ -132,6 +133,72 @@ class EventController {
       return res.status(500).json({
         success: false,
         error: 'An unexpected error occurred while fetching viewport events.',
+      });
+    }
+  }
+
+  /**
+   * GET /api/compare
+   * Side-by-side historical richness comparison of two locations.
+   *
+   * Query params:
+   *   location1 (required) — positive integer location ID
+   *   location2 (required) — positive integer location ID
+   *
+   * Response: { success, comparison: { location1: {...}, location2: {...} } }
+   */
+  async compareLocations(req, res) {
+    try {
+      const { location1, location2 } = req.query;
+
+      const id1 = parseInt(location1, 10);
+      const id2 = parseInt(location2, 10);
+
+      // ── Validate both IDs ──
+      if (!location1 || !location2 || isNaN(id1) || isNaN(id2) || id1 <= 0 || id2 <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Both "location1" and "location2" query parameters are required and must be positive integers.',
+        });
+      }
+
+      // ── Verify both locations exist ──
+      const [loc1, loc2] = await Promise.all([
+        LocationRepository.findById(id1),
+        LocationRepository.findById(id2),
+      ]);
+
+      if (!loc1) {
+        return res.status(404).json({
+          success: false,
+          error: `Location with id ${id1} not found.`,
+        });
+      }
+
+      if (!loc2) {
+        return res.status(404).json({
+          success: false,
+          error: `Location with id ${id2} not found.`,
+        });
+      }
+
+      // ── Compute comparison ──
+      const comparison = await CompareService.compare(id1, id2);
+
+      // Enrich with place names
+      comparison.location1.placeName = loc1.placeName || loc1.address || null;
+      comparison.location2.placeName = loc2.placeName || loc2.address || null;
+
+      return res.status(200).json({
+        success: true,
+        comparison,
+      });
+
+    } catch (err) {
+      console.error('🔴 EventController.compareLocations unexpected error:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'An unexpected error occurred while comparing locations.',
       });
     }
   }

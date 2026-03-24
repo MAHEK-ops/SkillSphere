@@ -19,6 +19,9 @@ router.post('/timeline', (req, res) => LocationController.getTimeline(req, res))
 router.get('/events/viewport', (req, res) => EventController.getEventsByViewport(req, res));
 router.get('/events', (req, res) => EventController.getEvents(req, res));
 
+// ─── Compare Endpoint ──────────────────────────────────────────
+router.get('/compare', (req, res) => EventController.compareLocations(req, res));
+
 // ─── Bookmark Endpoints ────────────────────────────────────────
 router.post('/bookmarks', (req, res) => BookmarkController.save(req, res));
 router.get('/bookmarks/:userId', (req, res) => BookmarkController.getByUserId(req, res));
