@@ -3,6 +3,8 @@ const router = express.Router();
 const LocationController = require('../controllers/LocationController');
 const EventController = require('../controllers/EventController');
 const BookmarkController = require('../controllers/BookmarkController');
+const validate = require('../middleware/validate');
+const timelineSchema = require('../validation/timelineSchema');
 
 // ─── Health Check ───────────────────────────────────────────────
 router.get('/health', (req, res) => {
@@ -13,7 +15,7 @@ router.get('/health', (req, res) => {
 });
 
 // ─── Timeline Endpoints ────────────────────────────────────────
-router.post('/timeline', (req, res) => LocationController.getTimeline(req, res));
+router.post('/timeline', validate(timelineSchema), (req, res) => LocationController.getTimeline(req, res));
 router.get('/timeline/:locationId/story', (req, res) => LocationController.getStory(req, res));
 
 // ─── Event Endpoints ────────────────────────────────────────────

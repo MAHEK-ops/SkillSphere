@@ -56,15 +56,8 @@ class LocationController {
     const startTime = Date.now();
 
     try {
-      const { address, latitude, longitude, radiusKm = 10, sortOrder = 'ASC', groupBy = null } = req.body;
-
-      // ── 1. Validate — address or coordinates required ──
-      const hasAddress = address && typeof address === 'string' && address.trim().length > 0;
-      const hasCoords = latitude != null && longitude != null;
-
-      if (!hasAddress && !hasCoords) {
-        throw new AppError('Validation failed: "address" or "latitude"/"longitude" coordinates are required.', 400);
-      }
+      const { address, latitude, longitude, radiusKm, sortOrder, groupBy } = req.body;
+      const hasAddress = address != null && address.trim().length > 0;
 
       // ── 2. Resolve location via LocationService ──
       let locationData;
