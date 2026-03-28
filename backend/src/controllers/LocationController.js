@@ -1,7 +1,9 @@
 const LocationService = require('../services/LocationService');
 const CacheService = require('../services/CacheService');
 const TimelineBuilder = require('../services/TimelineBuilder');
+const StoryModeService = require('../services/StoryModeService');
 const EventRepository = require('../repositories/EventRepository');
+const LocationRepository = require('../repositories/LocationRepository');
 const prisma = require('../db/prisma');
 
 // ─── Service Wiring ─────────────────────────────────────────────
@@ -159,6 +161,56 @@ class LocationController {
       return res.status(500).json({
         success: false,
         error: 'An unexpected error occurred. Please try again later.',
+      });
+    }
+  }
+
+  /**
+   * GET /api/timeline/:locationId/story
+   * Generate a readable historical narrative for a location's timeline.
+   *
+   * Response: { success, locationId, placeName, narrative }
+   */
+  async getStory(req, res) {
+    try {
+      const { locationId } = req.params;
+      const parsedId = parseInt(locationId, 10);
+
+      if (isNaN(parsedId) || parsedId <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: '"locationId" must be a positive integer.',
+        });
+      }
+
+      // Verify location exists
+      const location = await LocationRepository.findById(parsedId);
+      if (!location) {
+        return res.status(404).json({
+          success: false,
+          error: `Location with id ${parsedId} not found.`,
+        });
+      }
+
+      // Fetch persisted events and build a timeline
+      const events = await EventRepository.findByLocationId(parsedId);
+      const timeline = TimelineBuilder.build(events, location, { sortOrder: 'ASC' });
+
+      // Generate narrative
+      const narrative = StoryModeService.generateNarrative(timeline);
+
+      return res.status(200).json({
+        success: true,
+        locationId: parsedId,
+        placeName: location.placeName || location.address || null,
+        narrative,
+      });
+
+    } catch (err) {
+      console.error('🔴 LocationController.getStory unexpected error:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'An unexpected error occurred while generating the story.',
       });
     }
   }

@@ -12,8 +12,9 @@ router.get('/health', (req, res) => {
   });
 });
 
-// ─── Timeline Endpoint ─────────────────────────────────────────
+// ─── Timeline Endpoints ────────────────────────────────────────
 router.post('/timeline', (req, res) => LocationController.getTimeline(req, res));
+router.get('/timeline/:locationId/story', (req, res) => LocationController.getStory(req, res));
 
 // ─── Event Endpoints ────────────────────────────────────────────
 router.get('/events/viewport', (req, res) => EventController.getEventsByViewport(req, res));
