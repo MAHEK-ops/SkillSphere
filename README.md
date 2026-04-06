@@ -1,30 +1,23 @@
 # ChronoLens
 
-ChronoLens is a full-stack Historical Location Intelligence Engine built with Express.js, PostgreSQL/PostGIS, Redis, and React. It takes natural language locations or spatial coordinates, gathers aggregated historical data utilizing geospatial logic, and presents an interactive and filterable visual pipeline charting the chronological events that forged regions around the world.
+> Drop a pin anywhere on Earth. See what history happened there.
 
-## 🚀 Features
+ChronoLens takes a location — an address, a city, or raw GPS coordinates — and returns a structured historical timeline of events that occurred at or near that place. It pulls from multiple open data sources, cleans and merges the results, categorizes each event, and scores them by confidence.
 
-- **Spatial Geocoding Pipelines**: Cross-references raw text or coordinates natively through GeoNames and Wikipedia bounds.
-- **Deduplicated History Sets**: Aggregates overlapping chronological items intelligently through multi-factor similarity arrays.
-- **Narrative Story Generation**: Synthesizes pure API data automatically down into readable historical paragraph modes locally.
-- **Category Trends**: Builds native distribution analysis blocks identifying core locational contexts and dominant historical eras.
-- **Interactive Map Exploration**: Drags and zooms smoothly fetching new coordinates efficiently through PostGIS bounding boxes.
-- **Rich Comparisons**: Mount dual search logic evaluating regional history footprints against each other side-by-side cleanly.
+On the frontend, events appear as pins on an interactive map. Click a pin, read the event. Pan the map, new events load for the visible area. Filter by era, category, or keyword. Read the timeline as a narrative. Bookmark places. Compare two locations side by side.
 
 ---
 
-## 🛠 Prerequisites
+## Prerequisites
 
-- Node.js `v18+`
-- PostgreSQL `v14+` *(must have PostGIS extension enabled)*
-- Redis `v6+`
-- A free [GeoNames](http://www.geonames.org/login) account
+- Node.js v18+
+- PostgreSQL v14+ with PostGIS extension enabled
+- Redis v6+
+- A free [GeoNames account](http://www.geonames.org/login) for the GeoNames API username
 
 ---
 
-## 💻 Setup & Installation
-
-Follow these steps precisely to spin up the entire application locally.
+## Setup
 
 **1. Clone the repository**
 ```bash
@@ -32,101 +25,179 @@ git clone https://github.com/MAHEK-ops/ChronoLens.git
 cd ChronoLens
 ```
 
-**2. Setup Backend**
+**2. Install backend dependencies**
 ```bash
 cd backend
 npm install
-```
-
-**3. Configure Environment Variables**
-Copy the `.env.example` file to create your own configuration.
-```bash
 cp .env.example .env
 ```
-*(See [Environment Variables](#environment-variables) reference below to fill standard credentials)*
+Fill in your credentials in `.env` — see the environment variables section below.
 
-**4. Run Database Migrations**
-Executes Prisma setup and configures schema mappings formatting database rows.
+**3. Run database migrations**
 ```bash
 npx prisma migrate dev --name init
+npx prisma db seed
 ```
 
-**5. Initialize Spatial PostGIS Bounds**
-Executes explicit schema attachments generating PostGIS columns into mapping indexes dynamically.
+**4. Add PostGIS spatial columns**
 ```bash
 npm run migrate:postgis
 ```
 
-**6. Setup Frontend**
-Boot terminal on root repository and initialize React/Vite dependencies cleanly.
+**5. Install frontend dependencies**
 ```bash
 cd ../frontend
 npm install
-cp .env.example .env # Ensure VITE_API_BASE_URL=http://localhost:3000/api
+cp .env.example .env
 ```
+Set `VITE_API_BASE_URL=http://localhost:3000/api` in `frontend/.env`.
 
-**7. Run Both Servers Locally**
-Fire up both endpoints cleanly bridging your stack.
+**6. Start both servers**
 
-Terminal 1 (Backend):
+Terminal 1 — backend:
 ```bash
 cd backend
-npm start
+npm run dev
 ```
 
-Terminal 2 (Frontend):
+Terminal 2 — frontend:
 ```bash
 cd frontend
 npm run dev
 ```
 
----
-
-## 🔐 Environment Variables
-
-### Backend (`/backend/.env`)
-| Variable | Description |
-|---|---|
-| `PORT` | API execution port *(Default: 3000)* |
-| `DATABASE_URL` | PostGIS database connection string `postgresql://user:password@localhost:5432/chronolens` |
-| `REDIS_URL` | Redis caching connection string `redis://localhost:6379` |
-| `GEONAMES_USERNAME` | Valid active GeoNames account username | 
-| `NODE_ENV` | Toggle to `production` to suppress controller stack traces |
-
-### Frontend (`/frontend/.env`)
-| Variable | Description |
-|---|---|
-| `VITE_API_BASE_URL` | Path routing pointing to backend location *(Default: `http://localhost:3000/api`)* |
+Backend runs at `http://localhost:3000`. Frontend runs at `http://localhost:5173`.
 
 ---
 
-## 📚 API Reference
+## Environment Variables
 
-The core logic uses `/api` prefix mounted within Express.
+**`backend/.env`**
 
-### 1. `POST /api/timeline`
-Retrieves bounded chronology via unified address search bounds or direct coordinate maps.
+| Variable | Description |
+|---|---|
+| `PORT` | API port (default: 3000) |
+| `DATABASE_URL` | PostgreSQL connection string — `postgresql://user:password@localhost:5432/chronolens` |
+| `REDIS_URL` | Redis connection string — `redis://localhost:6379` |
+| `GEONAMES_USERNAME` | Your GeoNames account username |
+| `NODE_ENV` | Set to `production` to suppress stack traces in error responses |
+
+**`frontend/.env`**
+
+| Variable | Description |
+|---|---|
+| `VITE_API_BASE_URL` | Backend API base URL (default: `http://localhost:3000/api`) |
+
+---
+
+## How It Works
+
+1. User enters an address or drops a pin on the map
+2. Backend geocodes the address to coordinates via Nominatim
+3. Cache is checked — if this location was searched before, return instantly from Redis
+4. If not cached, three fetchers run in parallel — Wikipedia, Wikidata, GeoNames
+5. Raw results are merged and deduplicated
+6. Each event is extracted into a structured object (title, year, description, coordinates)
+7. Events are categorized and assigned an era
+8. Each event gets a confidence score based on source count and reliability weight
+9. Timeline is built, cached in Redis, saved to PostgreSQL
+10. Frontend renders the timeline list and map pins simultaneously
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Node.js + Express |
+| Database | PostgreSQL + PostGIS |
+| ORM | Prisma |
+| Cache | Redis |
+| HTTP Client | Axios |
+| Frontend | React.js |
+| Map | React Leaflet |
+
+---
+
+## Architecture
+
+```
+Controllers  →  Services  →  Repositories  →  PostgreSQL + PostGIS
+                   |
+             External APIs
+     (Wikipedia · Wikidata · GeoNames · Nominatim)
+```
+
+**Controllers** handle incoming HTTP requests and send responses. No logic lives here.
+
+**Services** hold all business logic — aggregation, deduplication, categorization, scoring, caching. Design patterns are applied here.
+
+**Repositories** are the only layer that talks to the database. Everything goes through Prisma.
+
+---
+
+## Features
+
+**Core**
+- Location input via address or GPS coordinates
+- Geocoding and reverse geocoding via Nominatim
+- Multi-source aggregation — Wikipedia, Wikidata, GeoNames running in parallel
+- Deduplication using title similarity and coordinate proximity
+- Event extraction — title, year, description, coordinates
+- Auto-categorization — War/Battle, Politics, Science, Culture, Disaster, Births/Deaths
+- Era classification — Ancient, Medieval, Colonial, Modern, Contemporary
+- Confidence scoring per event based on source reliability and data completeness
+- Chronological timeline with sort and group options
+- Filter by category, era, keyword, year range
+- Redis caching — repeated searches return instantly
+- Graceful degradation — if one API is down, the others continue
+
+**Advanced**
+- Interactive map with clustered event pins (React Leaflet)
+- Viewport-aware loading — PostGIS `ST_Within` fetches only events visible on screen
+- Radius search — PostGIS `ST_DWithin` for precise km-based queries
+- Story mode — timeline narrated as a readable historical paragraph
+- Bookmark locations
+- Compare two locations side by side with richness scores
+- Trend analysis — category and era breakdown per location
+
+---
+
+## Design Patterns
+
+| Pattern | Where it is used |
+|---|---|
+| **Strategy** | `WikipediaFetcher`, `WikidataFetcher`, `GeoNamesFetcher` all extend `HistoricalEventFetcher` — swappable at runtime |
+| **Adapter** | Each API returns different JSON — adapters normalize all of them into one `HistoricalEvent` shape |
+| **Factory** | `EventFactory` creates event objects from raw data, picks the correct adapter automatically |
+| **Decorator** | `ScoredEvent` wraps `HistoricalEvent` and adds a confidence score without modifying the base class |
+| **Template Method** | Base fetcher defines the pipeline (build params → call API → parse) — subclasses override only what differs |
+
+---
+
+## API Reference
+
+All endpoints are prefixed with `/api`.
+
+### `POST /api/timeline`
+Get the historical timeline for a location.
+
 ```json
-// Request Body
-{
-  "address": "Pune",
-  "radiusKm": 10,
-  "sortOrder": "ASC" 
-}
+// request
+{ "address": "Pune", "radiusKm": 10, "sortOrder": "ASC" }
 
-// Successful Response (200)
+// response
 {
   "success": true,
-  "location": {
-    "id": 1,
-    "placeName": "Pune",
-    "latitude": 18.5204,
-    "longitude": 73.8567
-  },
+  "cached": false,
+  "location": { "id": 1, "placeName": "Pune", "latitude": 18.5204, "longitude": 73.8567 },
   "timeline": {
+    "totalCount": 24,
+    "dominantCategory": "WAR_BATTLE",
+    "generatedAt": "2026-04-20T10:00:00.000Z",
     "events": [
       {
-        "id": "event_uuid",
+        "id": 5,
         "title": "Battle of Poona",
         "year": 1817,
         "category": "WAR_BATTLE",
@@ -139,10 +210,11 @@ Retrieves bounded chronology via unified address search bounds or direct coordin
 }
 ```
 
-### 2. `GET /api/timeline/:locationId/story`
-Reads a database-cached location id and translates all underlying history into a semantic readable string.
+### `GET /api/timeline/:locationId/story`
+Get the timeline as a readable historical narrative.
+
 ```json
-// Successful Response (200)
+// response
 {
   "success": true,
   "locationId": 1,
@@ -151,90 +223,68 @@ Reads a database-cached location id and translates all underlying history into a
 }
 ```
 
-### 3. `GET /api/events`
-Direct event querying dynamically fetching history lists attached exactly via `locationId`, matching internal query attributes.
-```json
-// Request URL
-// GET /api/events?locationId=1&category=WAR_BATTLE&sortOrder=DESC
+### `GET /api/events`
+Get filtered events for a saved location.
 
-// Successful Response (200)
-{
-  "success": true,
-  "count": 1,
-  "events": [
-    {
-      "id": "event_uuid",
-      "title": "Battle of Poona",
-      "year": 1817,
-      "category": "WAR_BATTLE",
-      "era": "MODERN"
-    }
-  ]
-}
+```
+GET /api/events?locationId=1&category=WAR_BATTLE&era=MODERN&keyword=battle&yearFrom=1600&yearTo=1900&sortOrder=DESC
 ```
 
-### 4. `GET /api/events/viewport`
-Explores geometry lookups evaluating events bounding exact raw geographic spans.
 ```json
-// Request URL
-// GET /api/events/viewport?north=19.123&south=18.012&east=74.321&west=72.829
-
-// Successful Response (200)
-{
-  "success": true,
-  "count": 15,
-  "events": [
-    {
-      "id": "event_uuid",
-      "latitude": 18.520,
-      "longitude": 73.856,
-      "title": "..."
-    }
-  ]
-}
+// response
+{ "success": true, "count": 5, "events": [...] }
 ```
 
-### 5. `GET /api/compare`
-Cross-references dual locations dynamically matching metrics.
-```json
-// Request URL
-// GET /api/compare?location1=1&location2=2
+### `GET /api/events/viewport`
+Get events within a map bounding box (used when panning the map).
 
-// Successful Response (200)
+```
+GET /api/events/viewport?north=19.123&south=18.012&east=74.321&west=72.829
+```
+
+```json
+// response
+{ "success": true, "count": 15, "events": [...] }
+```
+
+### `GET /api/compare`
+Compare the historical richness of two saved locations.
+
+```
+GET /api/compare?location1=1&location2=2
+```
+
+```json
+// response
 {
   "success": true,
   "comparison": {
     "location1": {
-      "placeName": "Pune", 
-      "totalEvents": 24,
-      "dominantCategory": "WAR_BATTLE", 
-      "dominantEra": "MODERN",
+      "placeName": "Pune", "totalEvents": 24,
+      "dominantCategory": "WAR_BATTLE", "dominantEra": "MODERN",
       "categoryBreakdown": { "WAR_BATTLE": 10, "POLITICS": 6 },
-      "averageConfidenceScore": 71.4, 
-      "richnessScore": 82
+      "averageConfidenceScore": 71.4, "richnessScore": 82
     },
     "location2": {
-      "placeName": "Mumbai",
-      "totalEvents": 50,
-      "dominantCategory": "CULTURE_ART", 
-      "dominantEra": "MODERN",
+      "placeName": "Mumbai", "totalEvents": 50,
+      "dominantCategory": "CULTURE_ART", "dominantEra": "MODERN",
       "categoryBreakdown": { "CULTURE_ART": 20, "POLITICS": 18 },
-      "averageConfidenceScore": 78.5, 
-      "richnessScore": 95
+      "averageConfidenceScore": 78.5, "richnessScore": 95
     }
   }
 }
 ```
 
-### 6. `GET /api/trends/:locationId`
-Builds quantitative trend analyses bounding exactly the spread distributions matching category vectors correctly.
+### `GET /api/trends/:locationId`
+Get category and era breakdown for a location.
+
 ```json
-// Successful Response (200)
+// response
 {
-  "success": true, 
-  "locationId": 1, 
+  "success": true,
+  "locationId": 1,
   "placeName": "Pune",
-  "dominantCategory": "WAR_BATTLE", 
+  "dominantCategory": "WAR_BATTLE",
   "dominantEra": "MODERN",
   "categoryBreakdown": [{ "category": "WAR_BATTLE", "count": 10, "percentage": 41.7 }],
   "eraBreakdown": [{ "era": "MODERN", "count": 12, "percentage": 50.0 }],
@@ -242,82 +292,90 @@ Builds quantitative trend analyses bounding exactly the spread distributions mat
 }
 ```
 
-### 7. Bookmarks / Collections (`POST` / `GET` / `DELETE`)
-Stores or retrieves historical user tracking nodes.
+### Bookmarks — `POST` / `GET` / `DELETE`
+
 ```json
 // POST /api/bookmarks
-// Request Body: { "userId": 1, "locationId": 12, "label": "Vacation Spot" }
+{ "userId": 1, "locationId": 12, "label": "Vacation Spot" }
 
-// GET /api/bookmarks/1 (Successful Response)
+// GET /api/bookmarks/1
 {
   "success": true,
-  "count": 1,
   "bookmarks": [
     {
-       "id": 5,
-       "userId": 1,
-       "locationId": 12,
-       "label": "Vacation Spot",
-       "createdAt": "2026-04-20T10:00:00.000Z",
-       "location": { "placeName": "Kyoto", "latitude": 35.0116, "longitude": 135.7681 }
+      "id": 5, "label": "Vacation Spot", "savedAt": "2026-04-20T10:00:00.000Z",
+      "location": { "placeName": "Kyoto", "latitude": 35.0116, "longitude": 135.7681 }
     }
   ]
 }
 
 // DELETE /api/bookmarks/5
-// Request Body: { "userId": 1 }
-// Successful Response: { "success": true, "message": "Bookmark deleted successfully." }
+// body: { "userId": 1 }
+{ "success": true, "message": "Bookmark deleted successfully." }
 ```
 
 ---
 
-## 📁 Architecture
+## Project Structure
 
-```text
+```
 ChronoLens/
 ├── backend/
 │   ├── prisma/
-│   │   ├── migrations/      # Database migrations
-│   │   └── schema.prisma    # Data models
-│   ├── src/
-│   │   ├── adapters/        # Standardization from APIs
-│   │   ├── api/             # Standalone endpoint refs
-│   │   ├── components/      # (React frontend context, unused in pure backend)
-│   │   ├── constants/       # Internal enums/dictionaries
-│   │   ├── controllers/     # Route logic
-│   │   ├── db/              # Redis and Postgres config
-│   │   ├── fetchers/        # GeoNames / Wikidata APIs
-│   │   ├── middleware/      # Rate limits & AppError
-│   │   ├── models/          # Service layer models
-│   │   ├── repositories/    # Database query abstractions
-│   │   ├── routes/          # Express route bindings
-│   │   ├── services/        # Deduplication, location parsing
-│   │   └── validation/      # Joi schemas
-│   └── .env
-└── frontend/
-    ├── src/
-    │   ├── api/             # Axios singletons
-    │   ├── components/      # React functional building blocks
-    │   ├── pages/           # Page rendering layouts
-    │   ├── App.jsx          # Router wrapping elements
-    │   └── main.jsx         # Dom injections
-    └── .env
+│   │   ├── schema.prisma
+│   │   ├── seed.js
+│   │   └── migrations/
+│   └── src/
+│       ├── adapters/          <- normalize each API response (Adapter Pattern)
+│       ├── constants/         <- Category and Era enums
+│       ├── controllers/       <- request/response handling
+│       ├── db/                <- Prisma client, Redis client
+│       ├── factory/           <- EventFactory (Factory Pattern)
+│       ├── fetchers/          <- Wikipedia, Wikidata, GeoNames (Strategy Pattern)
+│       ├── middleware/        <- error handler, rate limiter, validation
+│       ├── models/            <- domain classes (Location, HistoricalEvent, etc.)
+│       ├── repositories/      <- all database access
+│       ├── routes/            <- Express route bindings
+│       ├── services/          <- business logic
+│       ├── utils/             <- AppError, extractYear, eraFromYear
+│       ├── validation/        <- Joi schemas
+│       └── app.js
+├── frontend/
+│   └── src/
+│       ├── api/               <- Axios client and endpoint functions
+│       ├── components/
+│       │   ├── EventCard/
+│       │   ├── Filters/
+│       │   ├── Map/
+│       │   ├── SearchBar/
+│       │   └── Timeline/
+│       ├── pages/
+│       │   ├── Home.jsx
+│       │   ├── Compare.jsx
+│       │   └── Bookmarks.jsx
+│       ├── App.jsx
+│       └── main.jsx
+├── idea.md
+├── useCaseDiagram.md
+├── sequenceDiagram.md
+├── classDiagram.md
+├── ErDiagram.md
+└── README.md
 ```
 
 ---
 
-## 📸 Screenshots
+## Diagrams
 
-*(Replace placeholders with deployed screenshots before push)*
-
-### Main Timeline View
-`[Insert Screenshot Here]`
-
-### Side-by-Side Validation 
-`[Insert Screenshot Here]`
-
-### Geographic Trend Markers
-`[Insert Screenshot Here]`
+| Diagram | File |
+|---|---|
+| Use Case | [useCaseDiagram.md](./useCaseDiagram.md) |
+| Sequence | [sequenceDiagram.md](./sequenceDiagram.md) |
+| Class | [classDiagram.md](./classDiagram.md) |
+| ER | [ErDiagram.md](./ErDiagram.md) |
 
 ---
-🚀 *Happy Exploring!*
+
+## Screenshots
+
+*Will be added after deployment.*
